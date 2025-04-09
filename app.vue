@@ -185,8 +185,43 @@ select {
 <script setup>
 import { ref, onMounted } from 'vue';
 
-// Google Translate initialization function
+// Add these new state variables
+const posts = ref([]);
+const loading = ref(false);
+
+// Add the fetchPosts function
+const fetchPosts = async () => {
+  loading.value = true;
+  try {
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+    const data = await response.json();
+    // Add showDetails property to each post
+    posts.value = data.slice(0, 10).map(post => ({
+      ...post,
+      showDetails: false
+    }));
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// Add the toggleDetails function
+const toggleDetails = (post) => {
+  post.showDetails = !post.showDetails;
+};
+
 const initGoogleTranslate = () => {
+  // Clear any existing cookies first
+  document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + location.hostname;
+  
+  // Set new cookie for Hindi
+  document.cookie = 'googtrans=/auto/te; path=/';
+  document.cookie = 'googtrans=/auto/te; path=/; domain=.' + location.hostname;
+
+  // Create and append Google Translate script
   const script = document.createElement('script');
   script.type = 'text/javascript';
   script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
@@ -194,46 +229,59 @@ const initGoogleTranslate = () => {
   document.head.appendChild(script);
 
   window.googleTranslateElementInit = () => {
-    new window.google.translate.TranslateElement({
-      pageLanguage: 'pt',
-      includedLanguages: 'en,es,fr,de,it,hi,pt,jp,ar,ru,zh',
+    const translateElement = new window.google.translate.TranslateElement({
+      pageLanguage: 'auto',
+      includedLanguages: 'mr,hi,en,es,fr,de,it,pt,jp,ar,ru,zh,te',
       layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
       autoDisplay: false,
-      callback: () => {
+    }, 'google_translate_element');
+
+    // Force Hindi translation after widget loads
+    const forceHindiTranslation = () => {
+      const intervalId = setInterval(() => {
         const selectElement = document.querySelector('.goog-te-combo');
         if (selectElement) {
-          selectElement.value = 'pt';
+          selectElement.value = 'hi';
           selectElement.dispatchEvent(new Event('change'));
+          
+          // Clean up Google Translate elements
+          const topBar = document.querySelector('.skiptranslate');
+          if (topBar) {
+            topBar.style.display = 'none';
+          }
+          document.body.style.top = '0px';
+          
+          clearInterval(intervalId);
         }
-      }
-    }, 'google_translate_element');
+      }, 100);
+
+      // Clear interval after 5 seconds if it hasn't succeeded
+      setTimeout(() => clearInterval(intervalId), 5000);
+    };
+
+    // Initial attempt
+    forceHindiTranslation();
   };
 };
 
-const posts = ref([]);
-const loading = ref(true);
-
-const toggleDetails = (post) => {
-  post.showDetails = !post.showDetails;
-};
-
-const fetchPosts = async () => {
-  try {
-    const response = await fetch('https://jsonplaceholder.typicode.com/posts');
-    const data = await response.json();
-    posts.value = data.slice(0, 5).map(post => ({
-      ...post,
-      showDetails: false
-    }));
-    loading.value = false;
-  } catch (error) {
-    console.error('Error fetching posts:', error);
-    loading.value = false;
-  }
+// Helper function to check if translation is working
+const isTranslated = () => {
+  return document.cookie.includes('googtrans=/auto/hi');
 };
 
 onMounted(() => {
+  // Initialize Google Translate
   initGoogleTranslate();
+  
+  // Add a backup check to ensure translation is applied
+  setTimeout(() => {
+    if (!isTranslated()) {
+      console.log('Retrying translation...');
+      initGoogleTranslate();
+    }
+  }, 2000);
+
+  // Rest of your mounted logic
   fetchPosts();
 });
 </script>
