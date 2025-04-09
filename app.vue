@@ -66,9 +66,10 @@ const initGoogleTranslate = () => {
   document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.' + location.hostname;
   
-  // Set new cookie for Hindi
-  document.cookie = 'googtrans=/auto/te; path=/';
-  document.cookie = 'googtrans=/auto/te; path=/; domain=.' + location.hostname;
+  // Set new cookie for any language from here
+  // Just change /auto/jp to /auto/mr etc
+  document.cookie = 'googtrans=/auto/es; path=/';
+  document.cookie = 'googtrans=/auto/es; path=/; domain=.' + location.hostname;
 
   // Create and append Google Translate script
   const script = document.createElement('script');
@@ -78,44 +79,18 @@ const initGoogleTranslate = () => {
   document.head.appendChild(script);
 
   window.googleTranslateElementInit = () => {
-    const translateElement = new window.google.translate.TranslateElement({
+    new window.google.translate.TranslateElement({
       pageLanguage: 'auto',
-      includedLanguages: 'mr,hi,en,es,fr,de,it,pt,jp,ar,ru,zh,te',
+      includedLanguages: 'mr,hi,en,es,fr,de,it,pt,jp,ar,ru,zh,te,ja,ko,vi,th,id,ms,nl,pl,ro,sk,tr,vi,th,id,ms,nl,pl,ro,sk,tr,uk,hu,cs,da,el,he,hi,hr,hu,cs,da,el,he,hi,hr,id,is,it,ja,ko,ms,nl,pl,ro,sk,tr,vi,th,uk,vi,zh,sv,no,fi,da,de,nl,el,en,es,fr,hr,it,ja,ko,pl,pt,ru,sk,tr,vi,zh',
       layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
       autoDisplay: false,
     }, 'google_translate_element');
-
-    // Force Hindi translation after widget loads
-    const forceHindiTranslation = () => {
-      const intervalId = setInterval(() => {
-        const selectElement = document.querySelector('.goog-te-combo');
-        if (selectElement) {
-          selectElement.value = 'hi';
-          selectElement.dispatchEvent(new Event('change'));
-          
-          // Clean up Google Translate elements
-          const topBar = document.querySelector('.skiptranslate');
-          if (topBar) {
-            topBar.style.display = 'none';
-          }
-          document.body.style.top = '0px';
-          
-          clearInterval(intervalId);
-        }
-      }, 100);
-
-      // Clear interval after 5 seconds if it hasn't succeeded
-      setTimeout(() => clearInterval(intervalId), 5000);
-    };
-
-    // Initial attempt
-    forceHindiTranslation();
   };
 };
 
-// Helper function to check if translation is working
+// Update isTranslated function to check for Telugu instead of Hindi
 const isTranslated = () => {
-  return document.cookie.includes('googtrans=/auto/hi');
+  return document.cookie.includes('googtrans=/auto/jp');
 };
 
 onMounted(() => {
@@ -128,7 +103,7 @@ onMounted(() => {
       console.log('Retrying translation...');
       initGoogleTranslate();
     }
-  }, 2000);
+  }, 5000);
 
   // Rest of your mounted logic
   fetchPosts();
@@ -237,7 +212,7 @@ p {
 }
 
 /* Container Styles */
-container {
+.container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
